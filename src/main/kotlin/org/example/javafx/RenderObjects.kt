@@ -9,7 +9,6 @@ import kotlin.math.exp
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sin
-import kotlin.math.sqrt
 import kotlin.math.tan
 
 class Vertex (val x: Double, val y:Double, val z:Double)
@@ -96,17 +95,17 @@ class Screen (val canvas: Canvas, val camera: Camera = Camera()){
             gc.stroke = colorList[i%colorList.size]
             gc.fill = colorList[i%colorList.size]
 
-            gc.moveTo(canvas.width * (path[2].x * properZoom + 0.5), canvas.width*(-path[2].y * properZoom + 0.5))
+            gc.moveTo(0.5*canvas.width * path[2].x * properZoom + 0.5*canvas.width, 0.5*canvas.width*-path[2].y * properZoom + 0.5*canvas.height)
             for (j in 0..2) {
-                gc.lineTo(path[j].x * properZoom + canvas.width/2, -path[j].y * properZoom + canvas.height/2)
+                gc.lineTo(0.5*canvas.width * path[j].x * properZoom + 0.5*canvas.width, 0.5*canvas.width*-path[j].y * properZoom + 0.5*canvas.height)
             }
             gc.globalAlpha = 1.0
             gc.stroke()
             gc.globalAlpha = 0.75
             gc.fill()
         }
-        gc.stroke = Color.BLACK
-        gc.fill = Color.BLACK
+        gc.stroke = Color.WHITE
+        gc.fill = Color.WHITE.darker()
         val text = "%.2f %.2f %.2f  --  %0+7.2f %0+6.2f".format(camera.pos.x, camera.pos.y, camera.pos.z, camera.theta, camera.alpha)
         gc.fillText(text, 20.0, 20.0)
     }
@@ -137,16 +136,16 @@ class WorldToView(val camera: Camera): VertexShader() {
 
 class Perspective(val fov: Double): VertexShader() {
     override fun transform(v: Vertex): Vertex {
-        val horD = sqrt(v.x*v.x + v.y*v.y)
+//        val horD = sqrt(v.x*v.x + v.y*v.y)
         val y = v.y / v.z
         val x = v.x / v.z
         return Vertex(x/tan(degreesToRadians(fov/2)), y/tan(degreesToRadians(fov/2)), v.z)
-            // horD = y/newy
+
     }
 }
 
 class Renderer (camera: Camera){
-    val shaderPipeline: List<VertexShader> = listOf(WorldToView(camera), Perspective(90.0))
+    val shaderPipeline: List<VertexShader> = listOf(WorldToView(camera), Perspective(50.0))
 
     fun applyPipe(vertices: List<Vertex>) : List<Vertex>{
         var vertices = vertices

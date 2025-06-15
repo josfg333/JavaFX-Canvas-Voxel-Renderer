@@ -8,7 +8,7 @@ import javafx.scene.paint.Color
 import javafx.stage.Stage
 
 
-const val MOUSE_SENSITIVITY = 0.75
+const val MOUSE_SENSITIVITY = 0.2
 const val MOUSE_WHEEL_SENSITIVITY = 0.75
 const val SPEED = 0.2
 
@@ -19,7 +19,7 @@ class HelloApplication : Application() {
         val canvas = Canvas(600.0, 400.0)
         root.children.add(canvas)
 
-        val screen = Screen(canvas)
+        val screen = Screen(canvas, Camera(Position(-3.0, 3.0, -3.0), -45.0, -35.26438968))
         screen.vertices = listOf(
             Vertex(1.0, 1.0, -1.0), Vertex(-1.0, 1.0, -1.0), Vertex(-1.0, -1.0, -1.0), Vertex(1.0, -1.0, -1.0),
             Vertex(1.0, 1.0, 1.0), Vertex(-1.0, 1.0, 1.0), Vertex(-1.0, -1.0, 1.0), Vertex(1.0, -1.0, 1.0)
@@ -34,14 +34,14 @@ class HelloApplication : Application() {
         )
 
         screen.render2D()
-        val scene = Scene(root, canvas.width, canvas.height+30.0, Color.WHITESMOKE)
+        val scene = Scene(root, canvas.width, canvas.height, Color.BLACK)
 
         stage.widthProperty().addListener { observable, oldValue, newValue ->
             canvas.width = stage.width
             screen.render2D()
         }
         stage.heightProperty().addListener { observable, oldValue, newValue ->
-            canvas.height = stage.height - 30.0
+            canvas.height = stage.height
             screen.render2D()
         }
 
