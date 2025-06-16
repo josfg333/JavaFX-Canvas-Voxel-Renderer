@@ -46,7 +46,11 @@ class HelloApplication : Application() {
         }
 
         canvas.setOnScroll {s->
-            screen.zoom += MOUSE_WHEEL_SENSITIVITY * s.deltaY/100.0
+            if (s.isShiftDown) {
+                screen.fov += MOUSE_WHEEL_SENSITIVITY * s.deltaX/20.0
+            } else {
+                screen.zoom += MOUSE_WHEEL_SENSITIVITY * s.deltaY / 100.0
+            }
             screen.render2D()
         }
 

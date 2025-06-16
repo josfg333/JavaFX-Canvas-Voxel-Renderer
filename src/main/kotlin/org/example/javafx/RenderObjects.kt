@@ -77,7 +77,11 @@ class Screen (val canvas: Canvas, val camera: Camera = Camera()){
     var vertices: List<Vertex> = listOf()
     var tris: List<Tri> = listOf()
 
-    val renderer = Renderer(camera)
+    private val renderer = Renderer(camera)
+
+    var fov: Double
+        get() = renderer.perspectiveShader.fov
+        set(degrees) {renderer.perspectiveShader.fov = degrees}
 
     val colorList = listOf(Color.DARKRED.brighter(), Color.RED, Color.GOLD.brighter(), Color.YELLOW, Color.DARKORANGE, Color.ORANGE, Color.DODGERBLUE, Color.DEEPSKYBLUE, Color.FORESTGREEN, Color.GREEN.brighter(), Color.PURPLE.brighter(), Color.MEDIUMPURPLE, Color.KHAKI, Color.GOLD, Color.MEDIUMPURPLE, Color.MOCCASIN, Color.CADETBLUE, Color.STEELBLUE)
 
@@ -106,7 +110,10 @@ class Screen (val canvas: Canvas, val camera: Camera = Camera()){
         }
         gc.stroke = Color.WHITE
         gc.fill = Color.WHITE.darker()
-        val text = "%.2f %.2f %.2f  --  %0+7.2f %0+6.2f".format(camera.pos.x, camera.pos.y, camera.pos.z, camera.theta, camera.alpha)
+        val text = "x:%.2f y:%.2f z:%.2f\n \u03B8:%0+7.2f \u03B1:%0+6.2f\n FOV:%05.1f  Zoom:%+.2f".format(
+            camera.pos.x, camera.pos.y, camera.pos.z,
+            camera.theta, camera.alpha,
+            fov, zoom)
         gc.fillText(text, 20.0, 20.0)
     }
 }
@@ -134,7 +141,9 @@ class WorldToView(val camera: Camera): VertexShader() {
     }
 }
 
-class Perspective(val fov: Double): VertexShader() {
+class Perspective(fov: Double): VertexShader() {
+    var fov = fov
+        set(degrees) {field = max(1.0, min(179.0, degrees))}
     override fun transform(v: Vertex): Vertex {
 //        val horD = sqrt(v.x*v.x + v.y*v.y)
         val y = v.y / v.z
@@ -145,7 +154,8 @@ class Perspective(val fov: Double): VertexShader() {
 }
 
 class Renderer (camera: Camera){
-    val shaderPipeline: List<VertexShader> = listOf(WorldToView(camera), Perspective(50.0))
+    val perspectiveShader =  Perspective(130.0)
+    val shaderPipeline: List<VertexShader> = listOf(WorldToView(camera), perspectiveShader)
 
     fun applyPipe(vertices: List<Vertex>) : List<Vertex>{
         var vertices = vertices
