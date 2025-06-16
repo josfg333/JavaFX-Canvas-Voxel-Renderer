@@ -19,7 +19,7 @@ class HelloApplication : Application() {
         val canvas = Canvas(600.0, 400.0)
         root.children.add(canvas)
 
-        val screen = Screen(canvas, Camera(Position(-3.0, 3.0, -3.0), -45.0, -35.26438968))
+        val screen = Screen(canvas, Camera(Position(-1.0, 1.0, -1.0), -45.0, -35.26438968))
         screen.vertices = listOf(
             Vertex(1.0, 1.0, -1.0), Vertex(-1.0, 1.0, -1.0), Vertex(-1.0, -1.0, -1.0), Vertex(1.0, -1.0, -1.0),
             Vertex(1.0, 1.0, 1.0), Vertex(-1.0, 1.0, 1.0), Vertex(-1.0, -1.0, 1.0), Vertex(1.0, -1.0, 1.0)
@@ -34,7 +34,7 @@ class HelloApplication : Application() {
         )
 
         screen.render2D()
-        val scene = Scene(root, canvas.width, canvas.height, Color.BLACK)
+        val scene = Scene(root, canvas.width, canvas.height, Color.WHITESMOKE)
 
         stage.widthProperty().addListener { observable, oldValue, newValue ->
             canvas.width = stage.width

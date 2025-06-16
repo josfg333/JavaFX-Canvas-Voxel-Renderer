@@ -9,6 +9,7 @@ import kotlin.math.exp
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sin
+import kotlin.math.sqrt
 import kotlin.math.tan
 
 class Vertex (val x: Double, val y:Double, val z:Double)
@@ -71,8 +72,6 @@ class Camera (var pos: Position = Position(0.0,0.0,0.0),
 
 class Screen (val canvas: Canvas, val camera: Camera = Camera()){
     var zoom: Double = 0.0
-    private val properZoom
-        get() = exp(zoom)
 
     var vertices: List<Vertex> = listOf()
     var tris: List<Tri> = listOf()
@@ -89,32 +88,55 @@ class Screen (val canvas: Canvas, val camera: Camera = Camera()){
         val gc = canvas.graphicsContext2D
         gc.clearRect(0.0, 0.0, canvas.width, canvas.height)
         gc.font = Font(17.0)
+        gc.stroke = Color.BLACK
+        gc.lineWidth = 1.0
 
         val vertices = renderer.applyPipe(vertices)
         val paths = tris.map {tri-> arrayOf(vertices[tri.a], vertices[tri.b], vertices[tri.c])}
 
+        val properZoom = exp(zoom) * canvas.height / 2
         for (i in (0..paths.size-1).sortedByDescending {i -> paths[i][0].z + paths[i][2].z}) {
             val path = paths[i]
             gc.beginPath()
-            gc.stroke = colorList[i%colorList.size]
+//            gc.stroke = colorList[i%colorList.size]
             gc.fill = colorList[i%colorList.size]
 
-            gc.moveTo(0.5*canvas.width * path[2].x * properZoom + 0.5*canvas.width, 0.5*canvas.width*-path[2].y * properZoom + 0.5*canvas.height)
+            gc.moveTo(path[2].x * properZoom + 0.5*canvas.width, -path[2].y * properZoom + 0.5*canvas.height)
             for (j in 0..2) {
-                gc.lineTo(0.5*canvas.width * path[j].x * properZoom + 0.5*canvas.width, 0.5*canvas.width*-path[j].y * properZoom + 0.5*canvas.height)
+                gc.lineTo(path[j].x * properZoom + 0.5*canvas.width, -path[j].y * properZoom + 0.5*canvas.height)
             }
             gc.globalAlpha = 1.0
             gc.stroke()
             gc.globalAlpha = 0.75
             gc.fill()
+            gc.closePath()
         }
-        gc.stroke = Color.WHITE
-        gc.fill = Color.WHITE.darker()
+
+        // Crosshair
+        gc.stroke = Color.GRAY
+        gc.lineWidth = 2.0
+        gc.globalAlpha = 0.75
+        gc.beginPath()
+        gc.moveTo(canvas.width / 2 - 10, canvas.height / 2)
+        gc.lineTo(canvas.width / 2 + 10, canvas.height / 2)
+        gc.moveTo(canvas.width / 2, canvas.height / 2 - 10)
+        gc.lineTo(canvas.width / 2, canvas.height / 2 + 10)
+        gc.stroke()
+        gc.closePath()
+
+        // Debug Text
+        gc.stroke = Color.BLACK
+        gc.lineWidth = 1.0
+        gc.fill = Color.BLACK.brighter()
+        gc.globalAlpha = 1.0
         val text = "x:%.2f y:%.2f z:%.2f\n \u03B8:%0+7.2f \u03B1:%0+6.2f\n FOV:%05.1f  Zoom:%+.2f".format(
             camera.pos.x, camera.pos.y, camera.pos.z,
             camera.theta, camera.alpha,
             fov, zoom)
+
+        gc.beginPath()
         gc.fillText(text, 20.0, 20.0)
+        gc.closePath()
     }
 }
 
@@ -145,10 +167,15 @@ class Perspective(fov: Double): VertexShader() {
     var fov = fov
         set(degrees) {field = max(1.0, min(179.0, degrees))}
     override fun transform(v: Vertex): Vertex {
-//        val horD = sqrt(v.x*v.x + v.y*v.y)
-        val y = v.y / v.z
-        val x = v.x / v.z
-        return Vertex(x/tan(degreesToRadians(fov/2)), y/tan(degreesToRadians(fov/2)), v.z)
+        // Camera pos in projection point
+        val x = v.x / (v.z * tan(degreesToRadians(fov/2)))
+        val y = v.y / (v.z * tan(degreesToRadians(fov/2)))
+
+        // Camera pos in projection plane
+//        val x = v.x / (v.z * tan(degreesToRadians(fov/2)) + 1)
+//        val y = v.y / (v.z * tan(degreesToRadians(fov/2)) + 1)
+
+        return Vertex(x, y, v.z)
 
     }
 }
