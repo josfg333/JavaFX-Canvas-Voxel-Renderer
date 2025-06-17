@@ -51,7 +51,7 @@ class Screen (val canvas: Canvas, val camera: Camera = Camera()){
             gc.beginPath()
 
             for (j in 0..<3) {
-                val edge = t.array[j]
+                val edge = t.edgeArray[j]
                 if (edge == null) continue
                 gc.lineTo(
                     edge.first.x * properZoom + 0.5 * canvas.width,
@@ -65,8 +65,8 @@ class Screen (val canvas: Canvas, val camera: Camera = Camera()){
 
             gc.closePath()
 
-            gc.stroke = colorList[i % colorList.size]
-            gc.fill = colorList[i % colorList.size]
+            gc.stroke = colorList[t.texture]
+            gc.fill = colorList[t.texture]
 
             gc.stroke()
             gc.globalAlpha = 0.6
@@ -76,9 +76,9 @@ class Screen (val canvas: Canvas, val camera: Camera = Camera()){
             if (DEBUG_VIEW_ENABLED) {
                 gc.beginPath()
                 for (j in 0..<3) {
-                    val edge = t.array[j]
+                    val edge = t.edgeArray[j]
                     if (edge == null) continue
-                    val nextEdge = t.array[(j+1)%3]
+                    val nextEdge = t.edgeArray[(j+1)%3]
                     if (nextEdge == null) continue
                     gc.moveTo(
                         edge.second.x * properZoom + 0.5 * canvas.width,

@@ -29,12 +29,12 @@ class HelloApplication : Application() {
             Vertex(1.0, 1.0, 1.0), Vertex(-1.0, 1.0, 1.0), Vertex(-1.0, -1.0, 1.0), Vertex(1.0, -1.0, 1.0)
         )
         screen.tris = listOf(
-            Tri(0, 1, 2), Tri(2, 3, 0), // Front
-            Tri(5, 4, 7), Tri(7, 6, 5), // Back
-            Tri(1, 5, 6), Tri(6, 2, 1), // Left
-            Tri(4, 0, 3), Tri(3, 7, 4), // Right
-            Tri(4, 5, 1), Tri(1, 0, 4), // Top
-            Tri(3, 2, 6), Tri(6, 7, 3)  // Bottom
+            Tri(0, 1, 2, 0), Tri(2, 3, 0, 1), // Front
+            Tri(5, 4, 7, 2), Tri(7, 6, 5, 3), // Back
+            Tri(1, 5, 6, 4), Tri(6, 2, 1, 5), // Left
+            Tri(4, 0, 3, 6), Tri(3, 7, 4, 7), // Right
+            Tri(4, 5, 1, 8), Tri(1, 0, 4, 9), // Top
+            Tri(3, 2, 6, 10), Tri(6, 7, 3, 11)  // Bottom
         )
 
         screen.render2D()
@@ -57,7 +57,7 @@ class HelloApplication : Application() {
 
         // Zoom/FOV
         canvas.setOnScroll {s->
-            if (s.isShiftDown) {
+            if (!s.isShiftDown) {
                 screen.camera.fov += MOUSE_WHEEL_SENSITIVITY * s.deltaX/20.0
             } else {
                 screen.zoom += MOUSE_WHEEL_SENSITIVITY * s.deltaY / 100.0

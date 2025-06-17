@@ -4,15 +4,14 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.tan
 
-abstract class SegmentShader {
-    abstract fun transform (t: TriSeg): TriSeg
+interface Shader<V> {
+    fun transform (v:V): V
 }
 
-abstract class VertexShader {
-    abstract fun transform (v: Vertex): Vertex
-}
 
-class WorldToView(val camera: Camera): VertexShader() {
+
+
+class WorldToView(val camera: Camera): Shader<Vertex> {
     override fun transform(v: Vertex): Vertex {
         val pos = camera.pos
         val translateX = v.x - pos.x
@@ -31,13 +30,13 @@ class WorldToView(val camera: Camera): VertexShader() {
     }
 }
 
-class SquareDistanceShader(val camera: Camera): VertexShader() {
+class SquareDistanceShader(val camera: Camera): Shader<Vertex> {
     override fun transform(v: Vertex): Vertex {
         return Vertex(v.x, v.y, v.x*v.x+v.y*v.y + v.z*v.z)
     }
 }
 
-class Perspective(val camera: Camera): VertexShader() {
+class Perspective(val camera: Camera): Shader<Vertex> {
 
     override fun transform(v: Vertex): Vertex {
         // Camera pos in projection point
@@ -54,9 +53,9 @@ class Perspective(val camera: Camera): VertexShader() {
     }
 }
 
-class ClipTri(val camera: Camera): SegmentShader() {
-    override fun transform(t: TriSeg): TriSeg {
-        val edges: Array<Pair<Vertex, Vertex>?> = arrayOf(t.a, t.b, t.c)
+class ClipTri(val camera: Camera): Shader<TriSeg> {
+    override fun transform(v: TriSeg): TriSeg {
+        val edges = v.edgeArray
         val newEdges: Array<Pair<Vertex, Vertex>?> = Array(3) {null}
 
         for (i in 0 ..< 3) {
@@ -94,30 +93,30 @@ class ClipTri(val camera: Camera): SegmentShader() {
                 }
             }
         }
-        return TriSeg(newEdges)
+        return TriSeg(newEdges, v.texture)
     }
 }
 
-class TriPerspective (val vertexShader: VertexShader): SegmentShader() {
-    override fun transform(t: TriSeg): TriSeg {
+class TriPerspective (val vertexShader: Shader<Vertex>): Shader<TriSeg> {
+    override fun transform(v: TriSeg): TriSeg {
         val newEdges: Array<Pair<Vertex, Vertex>?> = Array(3){null}
         for (i in 0..<3) {
-            val edge = t.array[i]
+            val edge = v.edgeArray[i]
             if (edge != null) newEdges[i] = Pair(
                 vertexShader.transform(edge.first),
                 vertexShader.transform(edge.second)
             )
         }
 
-        return TriSeg(newEdges)
+        return TriSeg(newEdges, v.texture)
     }
 }
 
 
 
 class Renderer (camera: Camera){
-    val vertexPipeline: List<VertexShader> = listOf(WorldToView(camera))
-    val segmentPipeline: List<SegmentShader> = listOf(ClipTri(camera), TriPerspective(Perspective(camera)))
+    val vertexPipeline: List<Shader<Vertex>> = listOf(WorldToView(camera))
+    val segmentPipeline: List<Shader<TriSeg>> = listOf(ClipTri(camera), TriPerspective(Perspective(camera)))
 
     fun applyPipe(vertices: List<Vertex>, tris: List<Tri>) : Pair<List<Vertex>, List<TriSeg>> {
         var vertices = vertices
