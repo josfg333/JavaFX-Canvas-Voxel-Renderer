@@ -20,8 +20,10 @@ class HelloApplication : Application() {
         val canvas = Canvas(1000.0, 600.0)
         root.children.add(canvas)
 
-        val screen = Screen(canvas, Camera(Position(-1.2, 1.2, -1.2), -45.0, -35.26438968))
+        val camera = Camera(Position(-1.2, 1.2, -1.2), -45.0, -35.26438968)
+        val screen = Screen(canvas, camera)
 
+        // Render Objects
         screen.vertices = listOf(
             Vertex(1.0, 1.0, -1.0), Vertex(-1.0, 1.0, -1.0), Vertex(-1.0, -1.0, -1.0), Vertex(1.0, -1.0, -1.0),
             Vertex(1.0, 1.0, 1.0), Vertex(-1.0, 1.0, 1.0), Vertex(-1.0, -1.0, 1.0), Vertex(1.0, -1.0, 1.0)
@@ -36,8 +38,14 @@ class HelloApplication : Application() {
         )
 
         screen.render2D()
+
         val scene = Scene(root, canvas.width, canvas.height, Color.WHITE)
 
+        // #############
+        // # Listeners #
+        // #############
+
+        // Window Resize
         stage.widthProperty().addListener { observable, oldValue, newValue ->
             canvas.width = stage.width
             screen.render2D()
@@ -47,6 +55,7 @@ class HelloApplication : Application() {
             screen.render2D()
         }
 
+        // Zoom/FOV
         canvas.setOnScroll {s->
             if (s.isShiftDown) {
                 screen.camera.fov += MOUSE_WHEEL_SENSITIVITY * s.deltaX/20.0
@@ -56,6 +65,7 @@ class HelloApplication : Application() {
             screen.render2D()
         }
 
+        // Camera Rotation
         var oldMouseX = 0.0
         var oldMouseY = 0.0
         canvas.setOnMouseMoved { m: MouseEvent ->
@@ -64,11 +74,9 @@ class HelloApplication : Application() {
                 screen.camera.rotateUp((-m.screenY + oldMouseY) * MOUSE_SENSITIVITY)
                 screen.render2D()
             }
-
             oldMouseX = m.screenX
             oldMouseY = m.screenY
         }
-
         canvas.setOnMouseDragged { m: MouseEvent ->
             screen.camera.rotateLeft((-m.screenX + oldMouseX) * MOUSE_SENSITIVITY)
             screen.camera.rotateUp((-m.screenY + oldMouseY) * MOUSE_SENSITIVITY)
@@ -78,6 +86,7 @@ class HelloApplication : Application() {
             oldMouseY = m.screenY
         }
 
+        // Keypresses
         scene.setOnKeyPressed {k ->
             when (k.text) {
                 "w" -> screen.camera.forward(SPEED)
@@ -88,7 +97,6 @@ class HelloApplication : Application() {
                 "z" -> screen.camera.up(-SPEED)
             }
             screen.render2D()
-//            println(k)
         }
 
 

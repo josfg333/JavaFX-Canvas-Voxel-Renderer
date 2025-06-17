@@ -1,0 +1,130 @@
+package org.example.javafx
+
+import javafx.scene.canvas.Canvas
+import javafx.scene.paint.Color
+import javafx.scene.text.Font
+import kotlin.math.exp
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.measureTime
+
+const val DEBUG_VIEW_ENABLED: Boolean = false
+
+class Screen (val canvas: Canvas, val camera: Camera = Camera()){
+    var zoom: Double = 0.0
+
+    var vertices: List<Vertex> = listOf()
+    var tris: List<Tri> = listOf()
+
+    private val renderer = Renderer(camera)
+
+
+    private val colorList = listOf(Color.DARKRED.brighter(), Color.RED, Color.GOLD.brighter(), Color.YELLOW, Color.DARKORANGE, Color.ORANGE, Color.DODGERBLUE, Color.DEEPSKYBLUE, Color.FORESTGREEN, Color.GREEN.brighter(), Color.PURPLE, Color.PURPLE.brighter(), Color.KHAKI, Color.GOLD, Color.MEDIUMPURPLE, Color.MOCCASIN, Color.CADETBLUE, Color.STEELBLUE)
+
+    fun updateAspectRatio() {
+        camera.aspectRatio = canvas.width / canvas.height
+    }
+
+    var lastDuration = 0.seconds
+
+    fun render2D () { lastDuration = measureTime {
+        val gc = canvas.graphicsContext2D
+        gc.clearRect(0.0, 0.0, canvas.width, canvas.height)
+        gc.font = Font(17.0)
+        gc.stroke = Color.BLACK
+        gc.lineWidth = 1.0
+
+        val pair = renderer.applyPipe(vertices, tris)
+        val newVertices = pair.first
+        val triSegs = pair.second
+
+        val properZoom = exp(zoom) * canvas.height / 2
+
+        for (i in (0..tris.size - 1).sortedByDescending { i ->
+            val mid = newVertices[tris[i].a].vec + newVertices[tris[i].c].vec
+            val v = mid - camera.pos
+            v.x * v.x + v.y * v.y + v.z * v.z
+        }) {
+
+            val t = triSegs[i]
+            val show = arrayOf(t.aShow, t.bShow, t.cShow)
+            if (!(show[0] || show[1] || show[2])) continue
+
+            val path = arrayOf(arrayOf(t.a1, t.a2), arrayOf(t.b1, t.b2), arrayOf(t.c1, t.c2))
+
+            gc.beginPath()
+
+            for (j in 0..<3) {
+                if (!show[j]) continue
+                gc.lineTo(
+                    path[j][0].x * properZoom + 0.5 * canvas.width,
+                    -path[j][0].y * properZoom + 0.5 * canvas.height
+                )
+                gc.lineTo(
+                    path[j][1].x * properZoom + 0.5 * canvas.width,
+                    -path[j][1].y * properZoom + 0.5 * canvas.height
+                )
+            }
+
+            gc.closePath()
+
+            gc.stroke = colorList[i % colorList.size]
+            gc.fill = colorList[i % colorList.size]
+
+            gc.stroke()
+            gc.globalAlpha = 0.6
+            gc.fill()
+            gc.globalAlpha = 1.0
+
+            if (DEBUG_VIEW_ENABLED) {
+                gc.beginPath()
+                for (j in 0..<3) {
+                    if (!show[j] || !show[(j + 1) % 3]) continue
+                    gc.moveTo(
+                        path[j][1].x * properZoom + 0.5 * canvas.width,
+                        -path[j][1].y * properZoom + 0.5 * canvas.height
+                    )
+                    gc.lineTo(
+                        path[(j + 1) % 3][0].x * properZoom + 0.5 * canvas.width,
+                        -path[(j + 1) % 3][0].y * properZoom + 0.5 * canvas.height
+                    )
+                }
+                gc.closePath()
+
+                gc.lineWidth = 3.0
+                gc.stroke = Color.BLACK
+                gc.stroke()
+                gc.lineWidth = 1.0
+            }
+
+        }
+
+        // Crosshair
+        gc.stroke = Color.GRAY
+        gc.lineWidth = 2.0
+        gc.globalAlpha = 0.75
+        gc.beginPath()
+        gc.moveTo(canvas.width / 2 - 10, canvas.height / 2)
+        gc.lineTo(canvas.width / 2 + 10, canvas.height / 2)
+        gc.moveTo(canvas.width / 2, canvas.height / 2 - 10)
+        gc.lineTo(canvas.width / 2, canvas.height / 2 + 10)
+        gc.stroke()
+        gc.closePath()
+
+        // Debug Text
+        gc.lineWidth = 0.5
+        gc.fill = Color.GRAY
+        gc.globalAlpha = 1.0
+        val text =
+            "x:%.2f y:%.2f z:%.2f\n\u03B8:%0+7.2f \u03B1:%0+6.2f\nFOV:%05.1f  Zoom:%+.2f\n\nLast draw: %7.2f ms".format(
+                camera.pos.x, camera.pos.y, camera.pos.z,
+                camera.theta, camera.alpha,
+                camera.fov, zoom,
+                lastDuration.inWholeMicroseconds / 1000.0
+            )
+
+        gc.beginPath()
+        gc.fillText(text, 20.0, 20.0)
+        gc.closePath()
+    }
+    }
+}
