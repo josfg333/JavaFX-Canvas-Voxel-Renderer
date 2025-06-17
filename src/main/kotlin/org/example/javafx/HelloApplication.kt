@@ -3,6 +3,7 @@ package org.example.javafx
 import javafx.application.Application
 import javafx.scene.Scene
 import javafx.scene.canvas.Canvas
+import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
 import javafx.stage.Stage
@@ -16,21 +17,22 @@ class HelloApplication : Application() {
     override fun start(stage: Stage) {
         val root = Pane()
 
-        val canvas = Canvas(600.0, 400.0)
+        val canvas = Canvas(1000.0, 600.0)
         root.children.add(canvas)
 
-        val screen = Screen(canvas, Camera(Position(-1.0, 1.0, -1.0), -45.0, -35.26438968))
+        val screen = Screen(canvas, Camera(Position(-1.2, 1.2, -1.2), -45.0, -35.26438968))
+
         screen.vertices = listOf(
             Vertex(1.0, 1.0, -1.0), Vertex(-1.0, 1.0, -1.0), Vertex(-1.0, -1.0, -1.0), Vertex(1.0, -1.0, -1.0),
             Vertex(1.0, 1.0, 1.0), Vertex(-1.0, 1.0, 1.0), Vertex(-1.0, -1.0, 1.0), Vertex(1.0, -1.0, 1.0)
         )
         screen.tris = listOf(
-            Tri(0, 1, 2), Tri(2, 3, 0),
-            Tri(5, 4, 7), Tri(7, 6, 5),
-            Tri(1, 5, 6), Tri(6, 2, 1),
-            Tri(4, 0, 3), Tri(3, 7, 4),
-            Tri(4, 5, 1), Tri(1, 0, 4),
-            Tri(3, 2, 6), Tri(6, 7, 3)
+            Tri(0, 1, 2), Tri(2, 3, 0), // Front
+            Tri(5, 4, 7), Tri(7, 6, 5), // Back
+            Tri(1, 5, 6), Tri(6, 2, 1), // Left
+            Tri(4, 0, 3), Tri(3, 7, 4), // Right
+            Tri(4, 5, 1), Tri(1, 0, 4), // Top
+            Tri(3, 2, 6), Tri(6, 7, 3)  // Bottom
         )
 
         screen.render2D()
@@ -47,7 +49,7 @@ class HelloApplication : Application() {
 
         canvas.setOnScroll {s->
             if (s.isShiftDown) {
-                screen.fov += MOUSE_WHEEL_SENSITIVITY * s.deltaX/20.0
+                screen.camera.fov += MOUSE_WHEEL_SENSITIVITY * s.deltaX/20.0
             } else {
                 screen.zoom += MOUSE_WHEEL_SENSITIVITY * s.deltaY / 100.0
             }
@@ -56,17 +58,22 @@ class HelloApplication : Application() {
 
         var oldMouseX = 0.0
         var oldMouseY = 0.0
-        canvas.setOnMouseDragged { m ->
-            screen.camera.rotateLeft((-m.screenX + oldMouseX) * MOUSE_SENSITIVITY)
-            screen.camera.rotateUp((-m.screenY + oldMouseY) * MOUSE_SENSITIVITY)
-
-            screen.render2D()
+        canvas.setOnMouseMoved { m: MouseEvent ->
+            if (m.isShiftDown) {
+                screen.camera.rotateLeft((-m.screenX + oldMouseX) * MOUSE_SENSITIVITY)
+                screen.camera.rotateUp((-m.screenY + oldMouseY) * MOUSE_SENSITIVITY)
+                screen.render2D()
+            }
 
             oldMouseX = m.screenX
             oldMouseY = m.screenY
-//            println(m)
         }
-        canvas.setOnMouseMoved { m ->
+
+        canvas.setOnMouseDragged { m: MouseEvent ->
+            screen.camera.rotateLeft((-m.screenX + oldMouseX) * MOUSE_SENSITIVITY)
+            screen.camera.rotateUp((-m.screenY + oldMouseY) * MOUSE_SENSITIVITY)
+            screen.render2D()
+
             oldMouseX = m.screenX
             oldMouseY = m.screenY
         }
