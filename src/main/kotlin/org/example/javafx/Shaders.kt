@@ -93,7 +93,7 @@ class ClipTri(val camera: Camera): Shader<TriSeg> {
                 }
             }
         }
-        return TriSeg(newEdges, v.texture)
+        return TriSeg(newEdges, v.depth, v.texture)
     }
 }
 
@@ -108,7 +108,7 @@ class TriPerspective (val vertexShader: Shader<Vertex>): Shader<TriSeg> {
             )
         }
 
-        return TriSeg(newEdges, v.texture)
+        return TriSeg(newEdges, v.depth,v.texture)
     }
 }
 
@@ -118,8 +118,26 @@ class Renderer (camera: Camera){
     val vertexPipeline: List<Shader<Vertex>> = listOf(WorldToView(camera))
     val segmentPipeline: List<Shader<TriSeg>> = listOf(ClipTri(camera), TriPerspective(Perspective(camera)))
 
-    fun applyPipe(vertices: List<Vertex>, tris: List<Tri>) : Pair<List<Vertex>, List<TriSeg>> {
-        var vertices = vertices
+    fun aggregateModelInstances(instances: List<ModelInstance>): Model {
+        val vertices: MutableList<Vertex> = mutableListOf()
+        val tris: MutableList<Tri> = mutableListOf()
+
+        var offset: Int = 0
+        for (instance in instances) {
+            val newVertices = instance.transformedVertices()
+            vertices.addAll(newVertices)
+            tris.addAll(instance.model.tris.map{t -> Tri(
+                t.a+offset, t.b+offset, t.c+offset, t.texture
+            )})
+            offset += instance.model.vertices.size
+        }
+        return Model(vertices, tris)
+    }
+
+    fun applyPipe(data: List<ModelInstance>) : List<TriSeg> {
+        val globalModel = aggregateModelInstances(data)
+        var vertices = globalModel.vertices
+        val tris = globalModel.tris
         for (shader in vertexPipeline) {
             vertices = vertices.map { v -> shader.transform(v) }
         }
@@ -131,8 +149,6 @@ class Renderer (camera: Camera){
             triSegs = triSegs.map { t-> shader.transform(t) }
         }
 
-
-
-        return Pair(vertices, triSegs)
+        return triSegs
     }
 }

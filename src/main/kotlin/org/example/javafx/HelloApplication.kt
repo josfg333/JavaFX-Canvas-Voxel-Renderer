@@ -7,6 +7,8 @@ import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
 import javafx.stage.Stage
+import kotlin.math.E
+import kotlin.math.log
 
 
 const val MOUSE_SENSITIVITY = 0.2
@@ -21,25 +23,34 @@ class HelloApplication : Application() {
         root.children.add(canvas)
 
         val camera = Camera(Position(-1.2, 1.2, -1.2), -45.0, -35.26438968)
+        camera.fov = 30.0
         val screen = Screen(canvas, camera)
+        screen.zoom = log(0.2, E)
 
         // Render Objects
-        screen.vertices = listOf(
-            Vertex(1.0, 1.0, -1.0), Vertex(-1.0, 1.0, -1.0), Vertex(-1.0, -1.0, -1.0), Vertex(1.0, -1.0, -1.0),
-            Vertex(1.0, 1.0, 1.0), Vertex(-1.0, 1.0, 1.0), Vertex(-1.0, -1.0, 1.0), Vertex(1.0, -1.0, 1.0)
-        )
-        screen.tris = listOf(
-            Tri(0, 1, 2, 0), Tri(2, 3, 0, 1), // Front
-            Tri(5, 4, 7, 2), Tri(7, 6, 5, 3), // Back
-            Tri(1, 5, 6, 4), Tri(6, 2, 1, 5), // Left
-            Tri(4, 0, 3, 6), Tri(3, 7, 4, 7), // Right
-            Tri(4, 5, 1, 8), Tri(1, 0, 4, 9), // Top
-            Tri(3, 2, 6, 10), Tri(6, 7, 3, 11)  // Bottom
-        )
+
+//        screen.modelInstances.addAll(listOf(
+//            ModelInstance(Models.CUBE.m, Vec3(0.0, 0.0, 0.0))
+//        ))
+
+        for (i in 0..<10){
+            for (j in 0..<10) {
+                for (k in 0..(i+j)) {
+                    if (i < 9 && i > 0 && j < 9 && j > 0 && k > 0 && k < (i + j)) continue
+                    screen.modelInstances.add(
+                        ModelInstance(
+                            Models.CUBE.m, Vec3(
+                                i.toDouble(), k.toDouble(), j.toDouble()
+                            )
+                        )
+                    )
+                }
+            }
+        }
 
         screen.render2D()
 
-        val scene = Scene(root, canvas.width, canvas.height, Color.WHITE)
+        val scene = Scene(root, canvas.width, canvas.height, Color.BLACK)
 
         // #############
         // # Listeners #
@@ -58,7 +69,7 @@ class HelloApplication : Application() {
         // Zoom/FOV
         canvas.setOnScroll {s->
             if (!s.isShiftDown) {
-                screen.camera.fov += MOUSE_WHEEL_SENSITIVITY * s.deltaY/20.0
+                screen.camera.fov += -MOUSE_WHEEL_SENSITIVITY * s.deltaY/20.0
             } else {
                 screen.zoom += MOUSE_WHEEL_SENSITIVITY * s.deltaX / 100.0
             }

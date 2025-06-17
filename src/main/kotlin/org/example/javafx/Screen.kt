@@ -12,17 +12,12 @@ const val DEBUG_VIEW_ENABLED: Boolean = false
 class Screen (val canvas: Canvas, val camera: Camera = Camera()){
     var zoom: Double = 0.0
 
-    var vertices: List<Vertex> = listOf()
-    var tris: List<Tri> = listOf()
+    val modelInstances: MutableList<ModelInstance> = mutableListOf()
 
     private val renderer = Renderer(camera)
 
 
     private val colorList = listOf(Color.DARKRED.brighter(), Color.RED, Color.GOLD.brighter(), Color.YELLOW, Color.DARKORANGE, Color.ORANGE, Color.DODGERBLUE, Color.DEEPSKYBLUE, Color.FORESTGREEN, Color.GREEN.brighter(), Color.PURPLE, Color.PURPLE.brighter(), Color.KHAKI, Color.GOLD, Color.MEDIUMPURPLE, Color.MOCCASIN, Color.CADETBLUE, Color.STEELBLUE)
-
-    fun updateAspectRatio() {
-        camera.aspectRatio = canvas.width / canvas.height
-    }
 
     var lastDuration = 0.seconds
 
@@ -33,16 +28,12 @@ class Screen (val canvas: Canvas, val camera: Camera = Camera()){
         gc.stroke = Color.BLACK
         gc.lineWidth = 1.0
 
-        val pair = renderer.applyPipe(vertices, tris)
-        val newVertices = pair.first
-        val triSegs = pair.second
+        val triSegs = renderer.applyPipe(modelInstances)
 
         val properZoom = exp(zoom) * canvas.height / 2
 
-        for (i in (0..tris.size - 1).sortedByDescending { i ->
-            val mid = newVertices[tris[i].a].vec + newVertices[tris[i].c].vec
-            val v = mid - camera.pos
-            v.x * v.x + v.y * v.y + v.z * v.z
+        for (i in (0..triSegs.size - 1).sortedByDescending { i ->
+            triSegs[i].depth
         }) {
 
             val t = triSegs[i]
@@ -69,7 +60,7 @@ class Screen (val canvas: Canvas, val camera: Camera = Camera()){
             gc.fill = colorList[t.texture]
 
             gc.stroke()
-            gc.globalAlpha = 0.6
+            gc.globalAlpha = 0.2
             gc.fill()
             gc.globalAlpha = 1.0
 
