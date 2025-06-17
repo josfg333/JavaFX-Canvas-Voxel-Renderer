@@ -23,6 +23,10 @@ class Vec3 (val x: Double = 0.0, val y: Double=0.0, val z: Double=0.0) {
         return Vec3(x+other.x, y+other.y, z+other.z)
     }
 
+    operator fun minus(other: Vec3): Vec3 {
+        return this + other * -1.0
+    }
+
     operator fun times(other: Vec3): Vec3 {
         return Vec3(y*other.z - z*other.y, z*other.x-x*other.z, x*other.y-y*other.x)
     }
@@ -50,9 +54,9 @@ class TriSeg (val a1: Vertex, val a2: Vertex, val aShow: Boolean,
 {
     fun getSortedZs(): List<Double> {
         val ret = mutableListOf<Double>()
-        if (aShow) ret.add(a1.z + a2.z)
-        if (bShow) ret.add(b1.z + b2.z)
-//        if (cShow) ret.add(c1.z + c2.z)
+//        if (aShow) {ret.add(a1.z); ret.add(a2.z)}
+//        if (bShow) {ret.add(b1.z); ret.add(b2.z)}
+        if (true) {ret.add(c2.z)}
         ret.sort()
         return ret
     }
@@ -71,6 +75,8 @@ class TriSeg (val a1: Vertex, val a2: Vertex, val aShow: Boolean,
     }
 }
 class Position (var x: Double, var y:Double, var z: Double) {
+    val vec
+        get() = Vec3(x, y, z)
     fun update(x: Double, y:Double, z: Double) {
         this.x=x; this.y=y; this.z=z
     }
@@ -154,7 +160,7 @@ class Screen (val canvas: Canvas, val camera: Camera = Camera()){
     private val renderer = Renderer(camera)
 
 
-    private val colorList = listOf(Color.DARKRED.brighter(), Color.RED, Color.GOLD.brighter(), Color.YELLOW, Color.DARKORANGE, Color.ORANGE, Color.DODGERBLUE, Color.DEEPSKYBLUE, Color.FORESTGREEN, Color.GREEN.brighter(), Color.PURPLE.brighter(), Color.ORCHID, Color.KHAKI, Color.GOLD, Color.MEDIUMPURPLE, Color.MOCCASIN, Color.CADETBLUE, Color.STEELBLUE)
+    private val colorList = listOf(Color.DARKRED.brighter(), Color.RED, Color.GOLD.brighter(), Color.YELLOW, Color.DARKORANGE, Color.ORANGE, Color.DODGERBLUE, Color.DEEPSKYBLUE, Color.FORESTGREEN, Color.GREEN.brighter(), Color.PURPLE, Color.PURPLE.brighter(), Color.KHAKI, Color.GOLD, Color.MEDIUMPURPLE, Color.MOCCASIN, Color.CADETBLUE, Color.STEELBLUE)
 
     fun updateAspectRatio() {
         camera.aspectRatio = canvas.width / canvas.height
@@ -167,12 +173,16 @@ class Screen (val canvas: Canvas, val camera: Camera = Camera()){
         gc.stroke = Color.BLACK
         gc.lineWidth = 1.0
 
-        val triSegs = renderer.applyPipe(vertices, tris)
+        val pair = renderer.applyPipe(vertices, tris)
+        val newVertices = pair.first
+        val triSegs = pair.second
 
         val properZoom = exp(zoom) * canvas.height / 2
 
-        for (i in (0..triSegs.size-1).sortedByDescending {i ->
-            triSegs[i]
+        for (i in (0..tris.size-1).sortedByDescending {i ->
+            val mid = newVertices[tris[i].a].vec + newVertices[tris[i].c].vec
+            val v = mid - camera.pos.vec
+            v.x*v.x + v.y*v.y + v.z*v.z
         }) {
 
             val t = triSegs[i]
@@ -235,11 +245,10 @@ class Screen (val canvas: Canvas, val camera: Camera = Camera()){
         gc.closePath()
 
         // Debug Text
-        gc.stroke = Color.BLACK
-        gc.lineWidth = 1.0
-        gc.fill = Color.BLACK.brighter()
+        gc.lineWidth = 0.5
+        gc.fill = Color.GRAY
         gc.globalAlpha = 1.0
-        val text = "x:%.2f y:%.2f z:%.2f\n \u03B8:%0+7.2f \u03B1:%0+6.2f\n FOV:%05.1f  Zoom:%+.2f".format(
+        val text = "x:%.2f y:%.2f z:%.2f\n\u03B8:%0+7.2f \u03B1:%0+6.2f\nFOV:%05.1f  Zoom:%+.2f".format(
             camera.pos.x, camera.pos.y, camera.pos.z,
             camera.theta, camera.alpha,
             camera.fov, zoom)
@@ -279,18 +288,25 @@ class WorldToView(val camera: Camera): VertexShader() {
     }
 }
 
+class SquareDistanceShader(val camera: Camera): VertexShader() {
+    override fun transform(v: Vertex): Vertex {
+        return Vertex(v.x, v.y, v.x*v.x+v.y*v.y + v.z*v.z)
+    }
+}
+
 class Perspective(val camera: Camera): VertexShader() {
 
     override fun transform(v: Vertex): Vertex {
         // Camera pos in projection point
-        val x = v.x / (v.z * tan(degreesToRadians(camera.fov/2)))
-        val y = v.y / (v.z * tan(degreesToRadians(camera.fov/2)))
-
+        val t = tan(degreesToRadians(camera.fov/2))
+        val x = v.x / (v.z * t)
+        val y = v.y / (v.z * t)
+        val z = v.x*v.x + v.y*v.y + v.z*v.z
         // Camera pos in projection plane
 //        val x = v.x / (v.z * tan(degreesToRadians(fov/2)) + 1)
 //        val y = v.y / (v.z * tan(degreesToRadians(fov/2)) + 1)
 
-        return Vertex(x, y, v.z)
+        return Vertex(x, y, z)
 
     }
 }
@@ -353,7 +369,13 @@ class TriPerspective (val vertexShader: VertexShader): SegmentShader() {
         val b1 = if (t.bShow) vertexShader.transform(t.b1) else t.b1
         val b2 = if (t.bShow) vertexShader.transform(t.b2) else t.b2
         val c1 = if (t.cShow) vertexShader.transform(t.c1) else t.c1
-        val c2 = if (t.cShow) vertexShader.transform(t.c2) else t.c2
+        var c2 = if (t.cShow) vertexShader.transform(t.c2) else t.c2
+
+        if (t.cShow) {
+            c2 = Vertex(c2.x, c2.y,(t.c1.x+t.c2.x)*(t.c1.x+t.c2.x) + (t.c1.y+t.c2.y)*(t.c1.y+t.c2.y) + (t.c1.z+t.c2.z)*(t.c1.z+t.c2.z))
+        } else {
+            c2 = Vertex(c2.x, c2.y,(t.a1.x+t.b2.x)*(t.a1.x+t.b2.x) + (t.a1.y+t.b2.y)*(t.a1.y+t.b2.y) + (t.a1.z+t.b2.z)*(t.a1.z+t.b2.z))
+        }
 
         return TriSeg (
             a1, a2, t.aShow,
@@ -367,7 +389,7 @@ class Renderer (camera: Camera){
     val vertexPipeline: List<VertexShader> = listOf(WorldToView(camera))
     val segmentPipeline: List<SegmentShader> = listOf(ClipTri(camera), TriPerspective(Perspective(camera)))
 
-    fun applyPipe(vertices: List<Vertex>, tris: List<Tri>) : List<TriSeg>{
+    fun applyPipe(vertices: List<Vertex>, tris: List<Tri>) : Pair<List<Vertex>, List<TriSeg>> {
         var vertices = vertices
         for (shader in vertexPipeline) {
             vertices = vertices.map { v -> shader.transform(v) }
@@ -386,6 +408,6 @@ class Renderer (camera: Camera){
 
 
 
-        return triSegs
+        return Pair(vertices, triSegs)
     }
 }

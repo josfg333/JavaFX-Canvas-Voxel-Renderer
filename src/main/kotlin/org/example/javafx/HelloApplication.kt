@@ -36,7 +36,7 @@ class HelloApplication : Application() {
         )
 
         screen.render2D()
-        val scene = Scene(root, canvas.width, canvas.height, Color.WHITESMOKE)
+        val scene = Scene(root, canvas.width, canvas.height, Color.WHITE)
 
         stage.widthProperty().addListener { observable, oldValue, newValue ->
             canvas.width = stage.width
