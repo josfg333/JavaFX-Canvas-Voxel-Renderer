@@ -46,22 +46,20 @@ class Screen (val canvas: Canvas, val camera: Camera = Camera()){
         }) {
 
             val t = triSegs[i]
-            val show = arrayOf(t.aShow, t.bShow, t.cShow)
-            if (!(show[0] || show[1] || show[2])) continue
-
-            val path = arrayOf(arrayOf(t.a1, t.a2), arrayOf(t.b1, t.b2), arrayOf(t.c1, t.c2))
+            if (t.a==null && t.b==null && t.c==null) continue
 
             gc.beginPath()
 
             for (j in 0..<3) {
-                if (!show[j]) continue
+                val edge = t.array[j]
+                if (edge == null) continue
                 gc.lineTo(
-                    path[j][0].x * properZoom + 0.5 * canvas.width,
-                    -path[j][0].y * properZoom + 0.5 * canvas.height
+                    edge.first.x * properZoom + 0.5 * canvas.width,
+                    -edge.first.y * properZoom + 0.5 * canvas.height
                 )
                 gc.lineTo(
-                    path[j][1].x * properZoom + 0.5 * canvas.width,
-                    -path[j][1].y * properZoom + 0.5 * canvas.height
+                    edge.second.x * properZoom + 0.5 * canvas.width,
+                    -edge.second.y * properZoom + 0.5 * canvas.height
                 )
             }
 
@@ -78,14 +76,17 @@ class Screen (val canvas: Canvas, val camera: Camera = Camera()){
             if (DEBUG_VIEW_ENABLED) {
                 gc.beginPath()
                 for (j in 0..<3) {
-                    if (!show[j] || !show[(j + 1) % 3]) continue
+                    val edge = t.array[j]
+                    if (edge == null) continue
+                    val nextEdge = t.array[(j+1)%3]
+                    if (nextEdge == null) continue
                     gc.moveTo(
-                        path[j][1].x * properZoom + 0.5 * canvas.width,
-                        -path[j][1].y * properZoom + 0.5 * canvas.height
+                        edge.second.x * properZoom + 0.5 * canvas.width,
+                        -edge.second.y * properZoom + 0.5 * canvas.height
                     )
                     gc.lineTo(
-                        path[(j + 1) % 3][0].x * properZoom + 0.5 * canvas.width,
-                        -path[(j + 1) % 3][0].y * properZoom + 0.5 * canvas.height
+                        nextEdge.first.x * properZoom + 0.5 * canvas.width,
+                        -nextEdge.first.y * properZoom + 0.5 * canvas.height
                     )
                 }
                 gc.closePath()
