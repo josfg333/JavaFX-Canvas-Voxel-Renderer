@@ -6,14 +6,14 @@ import kotlin.math.min
 import kotlin.math.sin
 
 class Camera (var pos: Position = Position(0.0,0.0,0.0),
-              theta: Double = 0.0, alpha: Double = 0.0, fov: Double = 30.0) {
+              theta: Double = 0.0, alpha: Double = 0.0, fov: Double = 30.0, var dolly: Double = 0.0) {
 
     var aspectRatio: Double = 1.0
-    var nearPlaneDistance = 0.001
+    var nearPlaneDistance = 0.00001
 
     var theta = theta
         set(degrees) {
-            field = degrees % 360.0
+            field = ((degrees % 360.0)+360.0)%360
         }
 
     var alpha = alpha
@@ -32,7 +32,7 @@ class Camera (var pos: Position = Position(0.0,0.0,0.0),
 //        this.theta=theta
 //    }
     var fov = fov
-        set(degrees) {field = max(1.0, min(179.0, degrees)) }
+        set(degrees) {field = max(0.001, min(179.999, degrees)) }
 
     val leftFrustumLocalNormal
         get() = {

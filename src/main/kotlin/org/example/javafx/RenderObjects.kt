@@ -7,14 +7,15 @@ data class Vertex (val x: Double = 0.0, val y:Double = 0.0, val z:Double = 0.0) 
 }
 
 data class Tri (val a: Int, val b: Int, val c: Int, val texture: Int) {
-    fun toTriSeg(vertices: List<Vertex>) = TriSeg(
+    fun toTriSeg(vertices: List<Vertex>, depthFunc: (t: Tri) -> Double = {t:Tri ->
+        val v = (vertices[t.a].vec + vertices[t.c].vec) * 0.5
+        v.x * v.x + v.y * v.y + v.z * v.z
+    }
+    ) = TriSeg(
         a=Pair(vertices[a], vertices[b]),
         b=Pair(vertices[b], vertices[c]),
         c=Pair(vertices[c], vertices[a]),
-        depth = {
-            val v = (vertices[a].vec + vertices[c].vec) * 0.5
-            v.x * v.x + v.y * v.y + v.z * v.z
-        }(),
+        depth = depthFunc(this),
         texture=texture
     )
 }

@@ -11,6 +11,7 @@ const val DEBUG_VIEW_ENABLED: Boolean = false
 
 class Screen (val canvas: Canvas, val camera: Camera = Camera()){
     var zoom: Double = 0.0
+    var displayHud = true
 
     val modelInstances: MutableList<ModelInstance> = mutableListOf()
 
@@ -41,6 +42,15 @@ class Screen (val canvas: Canvas, val camera: Camera = Camera()){
 
             gc.beginPath()
 
+
+            val edge =t.edgeArray[2]
+            if (edge != null){
+                gc.lineTo(
+                    edge.second.x * properZoom + 0.5 * canvas.width,
+                    -edge.second.y * properZoom + 0.5 * canvas.height
+                )
+            }
+
             for (j in 0..<3) {
                 val edge = t.edgeArray[j]
                 if (edge == null) continue
@@ -48,19 +58,21 @@ class Screen (val canvas: Canvas, val camera: Camera = Camera()){
                     edge.first.x * properZoom + 0.5 * canvas.width,
                     -edge.first.y * properZoom + 0.5 * canvas.height
                 )
+                if (j==2) break
                 gc.lineTo(
                     edge.second.x * properZoom + 0.5 * canvas.width,
                     -edge.second.y * properZoom + 0.5 * canvas.height
                 )
             }
 
-            gc.closePath()
+            //gc.closePath()
 
             gc.stroke = colorList[t.texture]
             gc.fill = colorList[t.texture]
 
-            gc.stroke()
-            gc.globalAlpha = 0.2
+            gc.globalAlpha = 0.3
+//            gc.stroke()
+            gc.globalAlpha = 0.1
             gc.fill()
             gc.globalAlpha = 1.0
 
@@ -80,7 +92,6 @@ class Screen (val canvas: Canvas, val camera: Camera = Camera()){
                         -nextEdge.first.y * properZoom + 0.5 * canvas.height
                     )
                 }
-                gc.closePath()
 
                 gc.lineWidth = 3.0
                 gc.stroke = Color.BLACK
@@ -90,33 +101,35 @@ class Screen (val canvas: Canvas, val camera: Camera = Camera()){
 
         }
 
-        // Crosshair
-        gc.stroke = Color.GRAY
-        gc.lineWidth = 2.0
-        gc.globalAlpha = 0.75
-        gc.beginPath()
-        gc.moveTo(canvas.width / 2 - 10, canvas.height / 2)
-        gc.lineTo(canvas.width / 2 + 10, canvas.height / 2)
-        gc.moveTo(canvas.width / 2, canvas.height / 2 - 10)
-        gc.lineTo(canvas.width / 2, canvas.height / 2 + 10)
-        gc.stroke()
-        gc.closePath()
+        if (displayHud) {
+            // Crosshair
+            gc.stroke = Color.GRAY
+            gc.lineWidth = 2.0
+            gc.globalAlpha = 0.75
+            gc.beginPath()
+            gc.moveTo(canvas.width / 2 - 10, canvas.height / 2)
+            gc.lineTo(canvas.width / 2 + 10, canvas.height / 2)
+            gc.moveTo(canvas.width / 2, canvas.height / 2 - 10)
+            gc.lineTo(canvas.width / 2, canvas.height / 2 + 10)
+            gc.stroke()
+            gc.closePath()
 
-        // Debug Text
-        gc.lineWidth = 0.5
-        gc.fill = Color.GRAY
-        gc.globalAlpha = 1.0
-        val text =
-            "x:%.2f y:%.2f z:%.2f\n\u03B8:%0+7.2f \u03B1:%0+6.2f\nFOV:%05.1f  Zoom:%+.2f\n\nLast draw: %7.2f ms".format(
-                camera.pos.x, camera.pos.y, camera.pos.z,
-                camera.theta, camera.alpha,
-                camera.fov, zoom,
-                lastDuration.inWholeMicroseconds / 1000.0
-            )
+            // Debug Text
+            gc.lineWidth = 0.5
+            gc.fill = Color.GRAY
+            gc.globalAlpha = 1.0
+            val text =
+                "x:%.2f y:%.2f z:%.2f\n\u03B8:%0+7.2f \u03B1:%0+6.2f\nFOV:%05.1f  Zoom:%+.2f  Dolly:%+.2f\n\nLast draw: %7.2f ms".format(
+                    camera.pos.x, camera.pos.y, camera.pos.z,
+                    camera.theta, camera.alpha,
+                    camera.fov, zoom, camera.dolly,
+                    lastDuration.inWholeMicroseconds / 1000.0
+                )
 
-        gc.beginPath()
-        gc.fillText(text, 20.0, 20.0)
-        gc.closePath()
+            gc.beginPath()
+            gc.fillText(text, 20.0, 20.0)
+            gc.closePath()
+        }
     }
     }
 }
