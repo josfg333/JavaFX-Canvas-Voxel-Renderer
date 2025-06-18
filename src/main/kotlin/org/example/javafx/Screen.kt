@@ -21,6 +21,7 @@ class Screen (val canvas: Canvas, val camera: Camera = Camera()){
     private val colorList = listOf(Color.DARKRED.brighter(), Color.RED, Color.GOLD.brighter(), Color.YELLOW, Color.DARKORANGE, Color.ORANGE, Color.DODGERBLUE, Color.DEEPSKYBLUE, Color.FORESTGREEN, Color.GREEN.brighter(), Color.PURPLE, Color.PURPLE.brighter(), Color.KHAKI, Color.GOLD, Color.MEDIUMPURPLE, Color.MOCCASIN, Color.CADETBLUE, Color.STEELBLUE)
 
     var lastDuration = 0.seconds
+    var externalLastDuration = 0.seconds
 
     fun render2D () { lastDuration = measureTime {
         val gc = canvas.graphicsContext2D
@@ -72,7 +73,7 @@ class Screen (val canvas: Canvas, val camera: Camera = Camera()){
 
             gc.globalAlpha = 0.3
 //            gc.stroke()
-            gc.globalAlpha = 0.1
+            gc.globalAlpha = 0.2
             gc.fill()
             gc.globalAlpha = 1.0
 
@@ -119,11 +120,12 @@ class Screen (val canvas: Canvas, val camera: Camera = Camera()){
             gc.fill = Color.GRAY
             gc.globalAlpha = 1.0
             val text =
-                "x:%.2f y:%.2f z:%.2f\n\u03B8:%0+7.2f \u03B1:%0+6.2f\nFOV:%05.1f  Zoom:%+.2f  Dolly:%+.2f\n\nLast draw: %7.2f ms".format(
+                "x:%.2f y:%.2f z:%.2f\n\u03B8:%0+7.2f \u03B1:%0+6.2f\nFOV:%05.1f  Zoom:%+.2f  Dolly:%+.2f\n\nLast draw: %7.2f ms / %7.2f ms".format(
                     camera.pos.x, camera.pos.y, camera.pos.z,
                     camera.theta, camera.alpha,
                     camera.fov, zoom, camera.dolly,
-                    lastDuration.inWholeMicroseconds / 1000.0
+                    lastDuration.inWholeMicroseconds / 1000.0,
+                    externalLastDuration.inWholeMicroseconds / 1000.0
                 )
 
             gc.beginPath()

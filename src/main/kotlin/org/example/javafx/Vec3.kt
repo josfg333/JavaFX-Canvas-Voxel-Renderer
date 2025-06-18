@@ -1,5 +1,7 @@
 package org.example.javafx
 
+import kotlin.math.sqrt
+
 open class Vec3 (open val x: Double = 0.0, open val y: Double=0.0, open val z: Double=0.0) {
 
     fun toVertex() = Vertex(x, y, z)
@@ -21,9 +23,14 @@ open class Vec3 (open val x: Double = 0.0, open val y: Double=0.0, open val z: D
         return Vec3(scalar*x, scalar*y, scalar*z)
     }
 
+    operator fun div(scalar: Double): Vec3 = this * (1/scalar)
+
     fun dot(other: Vec3): Double {
         return x*other.x + y*other.y + z*other.z
     }
+
+    val length
+        get() = sqrt(this.dot(this))
 
 }
 
