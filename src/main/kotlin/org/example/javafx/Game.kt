@@ -3,7 +3,6 @@ package org.example.javafx
 import javafx.animation.AnimationTimer
 import javafx.application.Application
 import javafx.scene.input.KeyCode
-import kotlin.math.sqrt
 import kotlin.time.Duration.Companion.nanoseconds
 
 
@@ -48,6 +47,7 @@ class Game (val screen: Screen) {
     var fovDelta = 0.0
     var dollyDelta = 0.0
     var zoomDelta = 0.0
+    var canvasZoomDelta = 0.0
 
     private val keyUpEvents: MutableSet<KeyCode> = mutableSetOf()
 
@@ -95,8 +95,10 @@ class Game (val screen: Screen) {
             fovDelta = 0.0
             screen.camera.dolly += dollyDelta * MOUSE_WHEEL_SENSITIVITY * 0.5
             dollyDelta = 0.0
-            screen.zoom+=zoomDelta * MOUSE_WHEEL_SENSITIVITY
+            screen.camera.zoom+=zoomDelta * MOUSE_WHEEL_SENSITIVITY
             zoomDelta = 0.0
+            screen.canvasZoom+=canvasZoomDelta * MOUSE_WHEEL_SENSITIVITY
+            canvasZoomDelta = 0.0
             screen.externalLastDuration = (t - lastFrameT).nanoseconds
             lastFrameT = t
             screen.render2D()

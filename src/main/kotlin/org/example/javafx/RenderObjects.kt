@@ -1,9 +1,15 @@
 package org.example.javafx
 
+import kotlin.math.abs
+
 
 data class Vertex (val x: Double = 0.0, val y:Double = 0.0, val z:Double = 0.0) {
     val vec
         get() = Vec3(x, y, z)
+
+//    fun equals(other: Vertex): Boolean {
+//        return abs(x-other.x) < EPSILON  && abs(y,other.y) && abs(z-other.z) < EPSILON
+//    }
 }
 
 data class Tri (val a: Int, val b: Int, val c: Int, val texture: Int) {
@@ -36,5 +42,22 @@ class ModelInstance(val model: Model, val transform: Vec3, val mask: List<Boolea
         return model.vertices.map({v ->
             (v.vec + transform).toVertex()
         })
+    }
+}
+
+
+class Plane(normal: Vec3, var d: Double) {
+    var normal = normal
+        set(value) {
+            field = if (value.length < EPSILON) Vec3(z = 1.0)
+            else value / value.length
+        }
+
+    fun getSignedDistance(v: Vec3): Double {
+        return v.dot(normal) - d
+    }
+
+    fun proj(v: Vec3): Vec3 {
+        return normal * (v * normal) + (normal * d)
     }
 }

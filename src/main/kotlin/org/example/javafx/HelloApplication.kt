@@ -20,12 +20,13 @@ class HelloApplication : Application() {
         val canvas = Canvas(1366.0, 768.0)
         root.children.add(canvas)
 
-        val camera = Camera(Position(0.5, 0.5, 0.5), 0.0, )//35.264389682754654)
+        val camera = Camera(Position(0.5, 0.5, -2.5), 0.0, )//35.264389682754654)
+        camera.aspectRatio = canvas.width/canvas.height
         camera.fov = 90.0
         camera.dolly = 0.0
+        camera.zoom = 0.0
         val screen = Screen(canvas, camera)
         val game = Game(screen)
-        screen.zoom = 0.0
 
         // Render Objects
 
@@ -34,16 +35,17 @@ class HelloApplication : Application() {
 //        ))
 //
 
-        val octahedronSize = 10
-        val octahedronGap = 1
+        val octahedronSize = 4
+        val octahedronGap = 4
         for (subSize in octahedronSize downTo 0 step octahedronGap) {
+            val r = subSize.toDouble()+0.5
             for (i in -subSize..subSize) {
-                val r1 = floor(sqrt(subSize*subSize - i.toDouble()*i)+0.5).toInt()
+                val r1 = floor(sqrt(r*r - i.toDouble()*i)).toInt()
                 for (j in -r1..r1) {
-                    val y = floor(sqrt(subSize*subSize - i.toDouble()*i - j.toDouble()*j)+0.5).toInt()
+                    val y = floor(sqrt(r*r - i.toDouble()*i - j.toDouble()*j)).toInt()
                     for (k in 0..y step 1) {
-                        val lim1 = sqrt(subSize*subSize - (abs(i)).toDouble()*(abs(i)) - (abs(j)+1).toDouble()*(abs(j)+1))+0.5
-                        val lim2 = sqrt(subSize*subSize - (abs(i)+1).toDouble()*(abs(i)+1) - (abs(j)).toDouble()*(abs(j)))+0.5
+                        val lim1 = sqrt(r*r - (abs(i)).toDouble()*(abs(i)) - (abs(j)+1).toDouble()*(abs(j)+1))
+                        val lim2 = sqrt(r*r - (abs(i)+1).toDouble()*(abs(i)+1) - (abs(j)).toDouble()*(abs(j)))
                         if (
                             k < floor(lim1).toInt()
                             &&
@@ -59,7 +61,7 @@ class HelloApplication : Application() {
         }
         screen.updateVoxels()
 
-        val scene = Scene(root, canvas.width, canvas.height, Color.WHITESMOKE)
+        val scene = Scene(root, canvas.width, canvas.height, Color.BLACK)
 
 
 
@@ -70,18 +72,22 @@ class HelloApplication : Application() {
         // Window Resize
         stage.widthProperty().addListener { observable, oldValue, newValue ->
             canvas.width = stage.width
+            screen.camera.aspectRatio = canvas.width/canvas.height
         }
         stage.heightProperty().addListener { observable, oldValue, newValue ->
             canvas.height = stage.height
+            screen.camera.aspectRatio = canvas.width/canvas.height
         }
 
         // Zoom/FOV
         scene.onScroll = EventHandler { s->
             val amount = s.deltaX + s.deltaY
             if (s.isAltDown && s.isControlDown) {
-                game.dollyDelta += amount
+                game.canvasZoomDelta += amount
             } else if (s.isControlDown) {
                 game.fovDelta += amount
+            } else if (s.isAltDown) {
+                game.dollyDelta += amount
             } else {
                 game.zoomDelta += amount
             }

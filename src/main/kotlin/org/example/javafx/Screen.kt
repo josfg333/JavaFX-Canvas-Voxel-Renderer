@@ -4,7 +4,6 @@ import javafx.scene.canvas.Canvas
 import javafx.scene.paint.Color
 import javafx.scene.text.Font
 import javafx.scene.transform.Affine
-import javafx.scene.transform.Transform
 import kotlin.math.exp
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.measureTime
@@ -12,8 +11,10 @@ import kotlin.time.measureTime
 const val DEBUG_VIEW_ENABLED: Boolean = false
 
 class Screen (val canvas: Canvas, val camera: Camera = Camera()){
-    var zoom: Double = 0.0
     var displayHud = true
+    var canvasZoom = 0.0
+    val properCanvasZoom: Double
+        get() = exp(canvasZoom)
 
     val modelInstances: MutableList<ModelInstance> = mutableListOf()
 
@@ -35,22 +36,15 @@ class Screen (val canvas: Canvas, val camera: Camera = Camera()){
     }
     fun render2D () { lastDuration = measureTime {
         val gc = canvas.graphicsContext2D
-//        gc.restore()
-//        gc.beginPath()
-//        gc.moveTo(0.0, 0.0)
-//        gc.lineTo(canvas.width, 0.0)
-//        gc.lineTo(canvas.width, canvas.height)
-//        gc.lineTo(0.0, canvas.height)
-//        gc.closePath()
-//        gc.clip()
         gc.clearRect(0.0, 0.0, canvas.width, canvas.height)
         gc.font = Font(18.0)
+        gc.save()
 
         val triSegs = renderer.applyPipe()
 
-        val properZoom = exp(zoom) * canvas.height / 2
 
-        gc.save()
+        // Main Draw
+        val properZoom = camera.properZoom * properCanvasZoom * canvas.height / 2
         gc.transform = Affine(
             properZoom, 0.0, 0.5*canvas.width,
             0.0, -properZoom, 0.5*canvas.height
@@ -62,24 +56,17 @@ class Screen (val canvas: Canvas, val camera: Camera = Camera()){
 
             val t = triSegs[i]
 
-            gc.beginPath()
 
-            val edge =t.edgeArray[2]
-            if (edge != null){
-                gc.lineTo(
-                    edge.second.x,
-                    edge.second.y
-                )
-            }
+            gc.beginPath()
 
             for (j in 0..<3) {
                 val edge = t.edgeArray[j]
                 if (edge == null) continue
+
                 gc.lineTo(
                     edge.first.x,
                     edge.first.y,
                 )
-                if (j==2) break
                 gc.lineTo(
                     edge.second.x,
                     edge.second.y,
@@ -87,59 +74,89 @@ class Screen (val canvas: Canvas, val camera: Camera = Camera()){
             }
             gc.closePath()
 
-//            gc.stroke = colorList[t.texture]
-//            gc.lineWidth = 1.0
-//            gc.globalAlpha = 0.5
-//            gc.stroke()
+            gc.stroke = colorList[t.texture]
+            gc.lineWidth = 1.0 / (canvas.height/2)
+            gc.globalAlpha = 0.5
+            gc.stroke()
 
             gc.fill = colorList[t.texture]
             gc.globalAlpha = 0.2
             gc.fill()
 
             if (DEBUG_VIEW_ENABLED) {
+
                 gc.beginPath()
+                var firstIndex = -1
                 for (j in 0..<3) {
                     val edge = t.edgeArray[j]
                     if (edge == null) continue
-                    val nextEdge = t.edgeArray[(j+1)%3]
-                    if (nextEdge == null) continue
-                    gc.moveTo(
-                        edge.second.x,
-                        edge.second.y
-                    )
-                    gc.lineTo(
-                        nextEdge.first.x,
-                        nextEdge.first.y
-                    )
+                    firstIndex = j
+                    gc.moveTo(edge.second.x, edge.second.y)
+                    break
                 }
 
-                gc.lineWidth = 3.0
-                gc.stroke = Color.BLACK
-                gc.globalAlpha = 0.7
+                for (j in 0..<3) {
+                    val edge = t.edgeArray[(firstIndex+j+1)%3]
+                    if (edge == null) continue
+                    gc.lineTo(edge.first.x, edge.first.y)
+                    gc.moveTo(edge.second.x, edge.second.y)
+                }
+
+                gc.lineWidth = 3.0/(camera.properZoom*canvas.height/2)
+                gc.stroke = Color.WHITE
+                gc.globalAlpha = 0.5
                 gc.stroke()
             }
 
         }
 
+        gc.restore()
+        gc.save()
+
         if (displayHud) {
+
+            // Outline
+            gc.transform = Affine(
+                0.5*canvas.width*properCanvasZoom, 0.0, canvas.width/2,
+                0.0, -0.5*canvas.height*properCanvasZoom, canvas.height/2)
+
+            gc.beginPath()
+            gc.moveTo(-1.0, 1.0)
+            gc.lineTo(1.0, 1.0)
+            gc.lineTo(1.0, -1.0)
+            gc.lineTo(-1.0, -1.0)
+            gc.closePath()
+
+            gc.stroke = Color.WHITE
+            gc.lineWidth = 2.0 / (canvas.height / 2)
+            gc.globalAlpha = 1.0
+            gc.stroke()
+
             gc.restore()
+            gc.save()
+
+
             // Crosshair
-            gc.stroke = Color.GRAY
-            gc.lineWidth = 2.0
-            gc.globalAlpha = 0.75
+
             gc.beginPath()
             gc.moveTo(canvas.width / 2 - 5, canvas.height / 2)
             gc.lineTo(canvas.width / 2 + 5, canvas.height / 2)
             gc.moveTo(canvas.width / 2, canvas.height / 2 - 5)
             gc.lineTo(canvas.width / 2, canvas.height / 2 + 5)
+            gc.stroke = Color.GRAY
+            gc.lineWidth = 2.0
+            gc.globalAlpha = 0.75
             gc.stroke()
+
+            gc.restore()
+            gc.save()
 
             // Debug
             val text =
                 "x:%.2f y:%.2f z:%.2f\n\u03B8:%0+7.2f \u03B1:%0+6.2f\nFOV:%05.1f  Zoom:%+.2f  Dolly:%+.2f\n\nLast draw: %7.2f ms / %7.2f ms".format(
                     camera.pos.x, camera.pos.y, camera.pos.z,
                     camera.theta, camera.alpha,
-                    camera.fov, zoom, camera.dolly,
+                    camera.fov, camera.zoom, camera.dolly,
                     lastDuration.inWholeMicroseconds / 1000.0,
                     externalLastDuration.inWholeMicroseconds / 1000.0
                 )
@@ -150,7 +167,11 @@ class Screen (val canvas: Canvas, val camera: Camera = Camera()){
             gc.lineWidth=0.5
             gc.stroke = Color.BLACK
             gc.strokeText(text, 20.0, 20.0)
+
+            gc.restore()
+            gc.save()
         }
+        gc.restore()
     }
     }
 }
