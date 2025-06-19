@@ -31,7 +31,7 @@ data class Model (val vertices: List<Vertex>, val tris: List<Tri>){
 }
 
 
-class ModelInstance(val model: Model, val transform: Vec3) {
+class ModelInstance(val model: Model, val transform: Vec3, val mask: List<Boolean> = listOf()) {
     fun transformedVertices(): List<Vertex> {
         return model.vertices.map({v ->
             (v.vec + transform).toVertex()

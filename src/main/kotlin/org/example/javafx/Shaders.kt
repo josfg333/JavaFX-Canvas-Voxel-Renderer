@@ -60,11 +60,13 @@ class Perspective(val camera: Camera): Shader<Vertex> {
     }
 }
 
-class ClipTri(val camera: Camera): Shader<TriSeg> {
-    override fun transform(v: TriSeg): TriSeg {
+class ClipTri(val camera: Camera): Shader<TriSeg?> {
+    override fun transform(v: TriSeg?): TriSeg? {
+        v!!
         val edges = v.edgeArray
         val newEdges: Array<Pair<Vertex, Vertex>?> = Array(3) {null}
 
+        var visible = false
         for (i in 0 ..< 3) {
             val edge = edges[i]
             if (edge == null) continue
@@ -81,12 +83,14 @@ class ClipTri(val camera: Camera): Shader<TriSeg> {
             if (-EPSILON <= z1-z2 && z1-z2 <= EPSILON) {
                 if (z1 >= 0) {
                     newEdges[i] = Pair(v1, v2)
+                    visible = true
                 }
                 continue
             }
 
             val frac = z1 / (z1 - z2)
             if (z1 >= 0) {
+                visible = true
                 if (z2 >= 0) {
                     newEdges[i] = Pair(v1, v2)
                 } else {
@@ -97,6 +101,7 @@ class ClipTri(val camera: Camera): Shader<TriSeg> {
                 }
             } else {
                 if (z2 >= 0) {
+                    visible = true
                     val x = v1.x+(v2.x-v1.x)*frac
                     val y = v1.y+(v2.y-v1.y)*frac
                     val z = camera.nearPlaneDistance + camera.dolly/t
@@ -104,12 +109,13 @@ class ClipTri(val camera: Camera): Shader<TriSeg> {
                 }
             }
         }
-        return TriSeg(newEdges, v.depth, v.texture)
+        return if (visible) TriSeg(newEdges, v.depth, v.texture) else null
     }
 }
 
-class TriPerspective (val vertexShader: Shader<Vertex>): Shader<TriSeg> {
-    override fun transform(v: TriSeg): TriSeg {
+class TriPerspective (val vertexShader: Shader<Vertex>): Shader<TriSeg?> {
+    override fun transform(v: TriSeg?): TriSeg? {
+        v!!
         val newEdges: Array<Pair<Vertex, Vertex>?> = Array(3){null}
         for (i in 0..<3) {
             val edge = v.edgeArray[i]
@@ -125,44 +131,47 @@ class TriPerspective (val vertexShader: Shader<Vertex>): Shader<TriSeg> {
 
 
 
-class Renderer (val camera: Camera){
+class Renderer (val camera: Camera, val modelInstances: List<ModelInstance>){
     val vertexPipeline: List<Shader<Vertex>> = listOf(WorldToView(camera))
-    val segmentPipeline: List<Shader<TriSeg>> = listOf(ClipTri(camera), TriPerspective(Perspective(camera)))
+    val segmentPipeline: List<Shader<TriSeg?>> = listOf(ClipTri(camera), TriPerspective(Perspective(camera)))
 
-    fun aggregateModelInstances(instances: List<ModelInstance>): Model {
+    var worldModel: Model = Model(listOf(), listOf())
+
+    fun aggregateModelInstances() {
         val vertices: MutableList<Vertex> = mutableListOf()
         val tris: MutableList<Tri> = mutableListOf()
 
         var offset: Int = 0
-        for (instance in instances) {
+        for (instance in modelInstances) {
             val newVertices = instance.transformedVertices()
             vertices.addAll(newVertices)
-            tris.addAll(instance.model.tris.map{t -> Tri(
-                t.a+offset, t.b+offset, t.c+offset, t.texture
-            )})
+            tris.addAll(instance.model.tris.mapIndexedNotNull{i,t ->
+                if(i >= instance.mask.size || instance.mask[i])
+                    Tri(t.a+offset, t.b+offset, t.c+offset, t.texture)
+                else null
+            })
             offset += instance.model.vertices.size
         }
-        return Model(vertices, tris)
+        worldModel = Model(vertices, tris)
     }
 
-    fun applyPipe(data: List<ModelInstance>) : List<TriSeg> {
-        val globalModel = aggregateModelInstances(data)
-        var vertices = globalModel.vertices
-        val tris = globalModel.tris
+    fun applyPipe() : List<TriSeg> {
+        var vertices = worldModel.vertices
+        val tris = worldModel.tris
         for (shader in vertexPipeline) {
             vertices = vertices.map { v -> shader.transform(v) }
         }
 
         val tangent = tan(degreesToRadians(camera.fov/2))
+        val depthFunc = {t: Tri ->
+            val v = (vertices[t.a].vec + vertices[t.c].vec) * 0.5 + Vec3(0.0, 0.0, -camera.dolly/tangent)
+            v.x * v.x + v.y * v.y + v.z * v.z
+        }
         var triSegs: List<TriSeg> = tris.map {tri ->
-            // tri.toTriSeg(vertices
-            tri.toTriSeg(vertices, depthFunc = {t ->
-                val v = (vertices[t.a].vec + vertices[t.c].vec) * 0.5 + Vec3(0.0, 0.0, -camera.dolly/tangent)
-                v.x * v.x + v.y * v.y + v.z * v.z
-            })
+            tri.toTriSeg(vertices, depthFunc)
         }
         for (shader in segmentPipeline) {
-            triSegs = triSegs.map { t-> shader.transform(t) }
+            triSegs = triSegs.mapNotNull { t-> shader.transform(t) }
         }
 
         return triSegs

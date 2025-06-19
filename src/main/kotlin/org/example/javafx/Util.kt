@@ -7,3 +7,8 @@ const val EPSILON: Double = 0.000000001
 fun degreesToRadians(degrees: Double) : Double {
     return PI * degrees / 180.0
 }
+
+fun radiansToDegrees(radians: Double): Double {
+    return 180.0 * radians / PI
+}
+

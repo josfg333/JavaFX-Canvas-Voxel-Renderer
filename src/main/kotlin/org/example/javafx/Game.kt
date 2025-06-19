@@ -11,7 +11,7 @@ const val MOUSE_SENSITIVITY = 0.01 * 2.0
 const val MOUSE_WHEEL_SENSITIVITY = 0.01 * 0.25
 
 const val LOOK_SPEED = 30.0 // Degrees per second
-const val SPEED = 3.0 // Units per second
+const val SPEED = 5.0 // Units per second
 
 class Game (val screen: Screen) {
 
@@ -91,7 +91,7 @@ class Game (val screen: Screen) {
             lookDeltaX = 0.0
             screen.camera.rotateUp(lookDeltaY*LOOK_SPEED*MOUSE_SENSITIVITY)
             lookDeltaY = 0.0
-            screen.camera.fov += fovDelta * MOUSE_WHEEL_SENSITIVITY * 5.0
+            screen.camera.fov += fovDelta * MOUSE_WHEEL_SENSITIVITY * 10.0
             fovDelta = 0.0
             screen.camera.dolly += dollyDelta * MOUSE_WHEEL_SENSITIVITY * 0.5
             dollyDelta = 0.0
