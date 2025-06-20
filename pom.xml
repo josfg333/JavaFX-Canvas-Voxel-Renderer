@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.example</groupId>
+    <groupId>josfg333.voxel</groupId>
     <artifactId>JavaFX</artifactId>
     <version>1.0-SNAPSHOT</version>
     <name>JavaFX</name>
@@ -83,7 +83,7 @@
                         <!-- Default configuration for running with: mvn clean javafx:run -->
                         <id>default-cli</id>
                         <configuration>
-                            <mainClass>org.example.javafx/org.example.javafx.HelloApplication</mainClass>
+                            <mainClass>org.example.javafx/josfg_at_proton_dot_me.kotlin.voxel.software_render.HelloApplication</mainClass>
                             <launcher>app</launcher>
                             <jlinkZipName>app</jlinkZipName>
                             <jlinkImageName>app</jlinkImageName>

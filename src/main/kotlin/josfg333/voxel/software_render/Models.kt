@@ -1,4 +1,4 @@
-package org.example.javafx
+package josfg333.voxel.software_render
 
 enum class Models(val m: Model) {
     CUBE(Model(

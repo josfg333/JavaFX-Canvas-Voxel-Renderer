@@ -1,8 +1,8 @@
-package org.example.javafx
+package josfg333.voxel.software_render
 
 import javafx.animation.AnimationTimer
-import javafx.application.Application
 import javafx.scene.input.KeyCode
+import kotlin.collections.iterator
 import kotlin.time.Duration.Companion.nanoseconds
 
 
@@ -104,8 +104,4 @@ class Game (val screen: Screen) {
             screen.render2D()
         }
     }
-}
-
-fun main() {
-    Application.launch(HelloApplication::class.java)
 }

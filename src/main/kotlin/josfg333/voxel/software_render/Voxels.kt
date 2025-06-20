@@ -1,4 +1,4 @@
-package org.example.javafx
+package josfg333.voxel.software_render
 
 class Voxels {
     val voxelSet: MutableSet<Triple<Int, Int, Int>> = mutableSetOf()

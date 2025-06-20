@@ -1,4 +1,4 @@
-package org.example.javafx
+package josfg333.voxel.software_render
 
 import kotlin.math.atan
 import kotlin.math.cos

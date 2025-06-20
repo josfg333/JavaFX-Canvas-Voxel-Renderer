@@ -1,6 +1,4 @@
-package org.example.javafx
-
-import kotlin.math.abs
+package josfg333.voxel.software_render
 
 
 data class Vertex (val x: Double = 0.0, val y:Double = 0.0, val z:Double = 0.0) {

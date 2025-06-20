@@ -1,4 +1,4 @@
-package org.example.javafx
+package josfg333.voxel.software_render
 
 import kotlin.math.cos
 import kotlin.math.sin
@@ -63,7 +63,7 @@ class Perspective(val camera: Camera): Shader<Vertex>() {
     }
 }
 
-class CullTri(val plane: Plane, val segment: Boolean = false): Shader<TriSeg?>() {
+class CullTri(val plane: Plane): Shader<TriSeg?>() {
     override fun transform(v: TriSeg?): TriSeg? {
         v!!
         val edges = v.edgeArray

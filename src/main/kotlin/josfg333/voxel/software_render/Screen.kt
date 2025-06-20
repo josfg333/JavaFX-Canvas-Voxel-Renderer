@@ -1,4 +1,4 @@
-package org.example.javafx
+package josfg333.voxel.software_render
 
 import javafx.scene.canvas.Canvas
 import javafx.scene.paint.Color
@@ -74,10 +74,10 @@ class Screen (val canvas: Canvas, val camera: Camera = Camera()){
             }
             gc.closePath()
 
-            gc.stroke = colorList[t.texture]
-            gc.lineWidth = 1.0 / (canvas.height/2)
-            gc.globalAlpha = 0.5
-            gc.stroke()
+//            gc.stroke = colorList[t.texture]
+//            gc.lineWidth = 1.0 / (canvas.height/2)
+//            gc.globalAlpha = 0.5
+//            gc.stroke()
 
             gc.fill = colorList[t.texture]
             gc.globalAlpha = 0.2

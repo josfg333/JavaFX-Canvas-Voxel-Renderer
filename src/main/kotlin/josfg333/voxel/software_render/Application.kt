@@ -1,4 +1,4 @@
-package org.example.javafx
+package josfg333.voxel.software_render
 
 import javafx.application.Application
 import javafx.event.EventHandler
@@ -15,29 +15,22 @@ import kotlin.math.sqrt
 
 class HelloApplication : Application() {
     override fun start(stage: Stage) {
-        val root = Pane()
-
+        // Initialize Objects
         val canvas = Canvas(1366.0, 768.0)
-        root.children.add(canvas)
-
-        val camera = Camera(Position(0.5, 0.5, -2.5), 0.0, )//35.264389682754654)
+        val camera = Camera(Position(0.5, 0.5, -2.5), 0.0)//35.264389682754654)
         camera.aspectRatio = canvas.width/canvas.height
         camera.fov = 90.0
         camera.dolly = 0.0
         camera.zoom = 0.0
+
         val screen = Screen(canvas, camera)
         val game = Game(screen)
 
-        // Render Objects
 
-//        screen.modelInstances.addAll(listOf(
-//            ModelInstance(Models.CUBE.m, Vec3(0.0, 0.0, 0.0))
-//        ))
-//
-
-        val octahedronSize = 4
-        val octahedronGap = 4
-        for (subSize in octahedronSize downTo 0 step octahedronGap) {
+        // Add Voxels
+        val sphereSize = 20
+        val sphereGap = 10
+        for (subSize in sphereSize downTo 0 step sphereGap) {
             val r = subSize.toDouble()+0.5
             for (i in -subSize..subSize) {
                 val r1 = floor(sqrt(r*r - i.toDouble()*i)).toInt()
@@ -61,13 +54,14 @@ class HelloApplication : Application() {
         }
         screen.updateVoxels()
 
+
+        // Java FX Setup
+        val root = Pane()
+        root.children.add(canvas)
         val scene = Scene(root, canvas.width, canvas.height, Color.BLACK)
 
 
-
-        // #############
-        // # Listeners #
-        // #############
+        // # Listeners
 
         // Window Resize
         stage.widthProperty().addListener { observable, oldValue, newValue ->
@@ -100,8 +94,6 @@ class HelloApplication : Application() {
             if (m.isAltDown) {
                 game.lookDeltaX += (m.screenX - oldMouseX) * MOUSE_SENSITIVITY * LOOK_SPEED
                 game.lookDeltaY += (-m.screenY + oldMouseY) * MOUSE_SENSITIVITY * LOOK_SPEED
-//                screen.camera.rotateLeft(-(m.screenX - oldMouseX) * MOUSE_SENSITIVITY * LOOK_SPEED)
-//                screen.camera.rotateUp((-m.screenY + oldMouseY) * MOUSE_SENSITIVITY * LOOK_SPEED)
             }
             oldMouseX = m.screenX
             oldMouseY = m.screenY
@@ -118,12 +110,11 @@ class HelloApplication : Application() {
         scene.onKeyPressed = EventHandler { k ->
             game.handleKeyDown(k.code)
         }
-
         scene.onKeyReleased = EventHandler {k ->
             game.handleKeyUp(k.code)
         }
 
-
+        // Final Setup
         stage.title = "CUBES"
         stage.scene = scene
         game.animation.start()
